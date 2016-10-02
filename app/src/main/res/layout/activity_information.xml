@@ -55,7 +55,7 @@
                 android:id="@+id/mapViewOnInformation"
                 android:name="com.google.android.gms.maps.MapFragment"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="260dp"
                 android:layout_margin="5dp"
                 class="sprinwood.findmedicine.WorkaroundMapFragment"/>
             <Button

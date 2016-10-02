@@ -3,13 +3,11 @@ package sprinwood.findmedicine;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Point;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -20,23 +18,23 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import sprinwood.findmedicine.R;
 
 public class Information extends AppCompatActivity implements OnMapReadyCallback {
     TextView tvName;
@@ -48,12 +46,12 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
     ScrollView mScrollView;
     String idDrug;
     String idPharmInCycle;
-    Firebase myFirebaseRef;
+    FirebaseDatabase database;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_information);
-        myFirebaseRef = new Firebase("https://pharmacy-cost-map.firebaseio.com");
+        database = FirebaseDatabase.getInstance();
         Intent intent = getIntent();
         tvName = (TextView) findViewById(R.id.tvName);
         tvVendor = (TextView) findViewById(R.id.tvVendor);
@@ -62,9 +60,9 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
         String name = intent.getStringExtra("name");
         String vendor = intent.getStringExtra("vendor");
         idDrug = intent.getStringExtra("id");
-
-        myFirebaseRef.child("drugs_pharmacy").child(idDrug).child("pharmacies_costs")
-                .addValueEventListener(new ValueEventListener() {
+        Log.d("MYTAG","drugs_pharmacy/" + String.valueOf(idDrug) + "/pharmacies_costs");
+        DatabaseReference myFirebaseRef = database.getReference("drugs_pharmacy/" + String.valueOf(idDrug) + "/pharmacies_costs");
+        myFirebaseRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 namesAndCosts = new ArrayList<String[]>();
@@ -72,7 +70,7 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
                 idPharmInCycle = "kek";
                 for(DataSnapshot dsp : snapshot.getChildren()){
                     for(DataSnapshot dsp2 : dsp.getChildren()){
-                        if(String.valueOf(dsp2.getKey()) == "name"){
+                        if(String.valueOf(dsp2.getKey()).equals("name")){
                             tmp.add(String.valueOf(dsp2.getValue()));
                             String namePharm = String.valueOf(dsp2.getValue());
 
@@ -89,7 +87,7 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
                             }
                             tmp.add(idPharmInCycle);
                         }
-                        else if(String.valueOf(dsp2.getKey()) == "cost") {
+                        else if(String.valueOf(dsp2.getKey()).equals("cost")) {
                             tmp.add(String.valueOf(dsp2.getValue()));
                         }
                     }
@@ -120,16 +118,17 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
                 setListViewHeightBasedOnChildren(lvInformation);
 
                 for(final String[] aStr : namesAndCosts) {
-                    myFirebaseRef.child("pharmacy_addr").child(aStr[2]).addValueEventListener(new ValueEventListener() {
+                    DatabaseReference newRef = database.getReference("pharmacy_addr/" + aStr[2]);
+                    newRef.addValueEventListener(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
                             double lat=0;
                             double lng=0;
 
                             for(DataSnapshot dsp : dataSnapshot.getChildren() ){
-                                if(String.valueOf(dsp.getKey()) == "latitude"){
+                                if(String.valueOf(dsp.getKey()).equals("latitude")){
                                     lat = Double.valueOf(String.valueOf(dsp.getValue()));
-                                } else if(String.valueOf(dsp.getKey())=="longtitude"){
+                                } else if(String.valueOf(dsp.getKey()).equals("longtitude")){
                                     lng = Double.valueOf(String.valueOf(dsp.getValue()));
                                 }
                             }
@@ -137,16 +136,16 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
                         }
 
                         @Override
-                        public void onCancelled(FirebaseError firebaseError) {
-                            Log.e("The read failed: " ,firebaseError.getMessage());
+                        public void onCancelled(DatabaseError databaseError) {
+                            Log.e("The read failed: " ,databaseError.getMessage());
                         }
                     });
                 }
             }
 
             @Override
-            public void onCancelled(FirebaseError firebaseError) {
-                Log.e("The read failed: " ,firebaseError.getMessage());
+            public void onCancelled(DatabaseError databaseError) {
+                Log.e("The read failed: " ,databaseError.getMessage());
             }
         });
 
@@ -156,7 +155,7 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                Intent intent = new Intent(getApplicationContext(), ListActivity.class);
                 startActivity(intent);
             }
         });

@@ -7,14 +7,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -23,6 +19,11 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,19 +32,18 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     GoogleMap mvOnMapAct;
     List<String[]> namesAndCosts;
     String idPharmInCycle = "kek";
-    Firebase myFirebaseRef;
+    FirebaseDatabase database;
     String idDrug;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         Intent intent = getIntent();
-        myFirebaseRef = new Firebase("https://pharmacy-cost-map.firebaseio.com");
+        database = FirebaseDatabase.getInstance();
         idDrug = intent.getStringExtra("idDrug");
-        Log.d("TAG","idDrug = " + idDrug);
         createMapView();
-        myFirebaseRef.child("drugs_pharmacy").child(idDrug).child("pharmacies_costs")
-                .addValueEventListener(new ValueEventListener() {
+        DatabaseReference myFirebaseRef = database.getReference("drugs_pharmacy/" + String.valueOf(idDrug) + "/pharmacies_costs");
+        myFirebaseRef.addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot snapshot) {
                         namesAndCosts = new ArrayList<String[]>();
@@ -51,7 +51,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         idPharmInCycle = "kek";
                         for(DataSnapshot dsp : snapshot.getChildren()){
                             for(DataSnapshot dsp2 : dsp.getChildren()){
-                                if(String.valueOf(dsp2.getKey()) == "name"){
+                                if(String.valueOf(dsp2.getKey()).equals("name")){
                                     tmp.add(String.valueOf(dsp2.getValue()));
                                     String namePharm = String.valueOf(dsp2.getValue());
 
@@ -68,7 +68,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                     }
                                     tmp.add(idPharmInCycle);
                                 }
-                                else if(String.valueOf(dsp2.getKey()) == "cost") {
+                                else if(String.valueOf(dsp2.getKey()).equals("cost")) {
                                     tmp.add(String.valueOf(dsp2.getValue()));
                                 }
                             }
@@ -76,16 +76,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             tmp.clear();
                         }
                         for(final String[] aStr : namesAndCosts) {
-                            myFirebaseRef.child("pharmacy_addr").child(aStr[2]).addValueEventListener(new ValueEventListener() {
+                            DatabaseReference newRef = database.getReference("pharmacy_addr/" + aStr[2]);
+                            newRef.addValueEventListener(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
                                     double lat=0;
                                     double lng=0;
 
                                     for(DataSnapshot dsp : dataSnapshot.getChildren() ){
-                                        if(String.valueOf(dsp.getKey()) == "latitude"){
+                                        if(String.valueOf(dsp.getKey()).equals("latitude")){
                                             lat = Double.valueOf(String.valueOf(dsp.getValue()));
-                                        } else if(String.valueOf(dsp.getKey())=="longtitude"){
+                                        } else if(String.valueOf(dsp.getKey()).equals("longtitude")){
                                             lng = Double.valueOf(String.valueOf(dsp.getValue()));
                                         }
                                     }
@@ -93,16 +94,16 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                 }
 
                                 @Override
-                                public void onCancelled(FirebaseError firebaseError) {
-                                    Log.e("The read failed: " ,firebaseError.getMessage());
+                                public void onCancelled(DatabaseError databaseError) {
+                                    Log.e("The read failed: " ,databaseError.getMessage());
                                 }
                             });
                         }
                     }
 
                     @Override
-                    public void onCancelled(FirebaseError firebaseError) {
-                        Log.e("The read failed: " ,firebaseError.getMessage());
+                    public void onCancelled(DatabaseError databaseError) {
+                        Log.e("The read failed: " ,databaseError.getMessage());
                     }
                 });
     }
