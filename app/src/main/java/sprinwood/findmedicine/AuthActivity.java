@@ -1,7 +1,9 @@
 package sprinwood.findmedicine;
 
+import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
+import android.support.multidex.MultiDex;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -35,6 +37,7 @@ public class AuthActivity extends AppCompatActivity {
         etEmail = (EditText) findViewById(R.id.etEmailOnLogin);
         etPass = (EditText) findViewById(R.id.etPassOnLogin);
         mAuth = FirebaseAuth.getInstance();
+        mAuth.signOut();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -91,6 +94,13 @@ public class AuthActivity extends AppCompatActivity {
             }
         });
     }
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        MultiDex.install(base);
+    }
+
     @Override
     public void onStart() {
         super.onStart();
