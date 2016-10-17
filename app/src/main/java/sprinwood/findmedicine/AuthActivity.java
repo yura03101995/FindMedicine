@@ -37,7 +37,7 @@ public class AuthActivity extends AppCompatActivity {
         etEmail = (EditText) findViewById(R.id.etEmailOnLogin);
         etPass = (EditText) findViewById(R.id.etPassOnLogin);
         mAuth = FirebaseAuth.getInstance();
-        mAuth.signOut();
+        //mAuth.signOut();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {

@@ -42,70 +42,67 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         database = FirebaseDatabase.getInstance();
         idDrug = intent.getStringExtra("idDrug");
         createMapView();
-        DatabaseReference myFirebaseRef = database.getReference("drugs_pharmacy/" + String.valueOf(idDrug) + "/pharmacies_costs");
+        DatabaseReference myFirebaseRef = database.getReference("pharma_drug_cost");
         myFirebaseRef.addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot snapshot) {
-                        namesAndCosts = new ArrayList<String[]>();
-                        List<String> tmp = new ArrayList<String>();
-                        idPharmInCycle = "kek";
-                        for(DataSnapshot dsp : snapshot.getChildren()){
-                            for(DataSnapshot dsp2 : dsp.getChildren()){
-                                if(String.valueOf(dsp2.getKey()).equals("name")){
-                                    tmp.add(String.valueOf(dsp2.getValue()));
-                                    String namePharm = String.valueOf(dsp2.getValue());
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                namesAndCosts = new ArrayList<String[]>();
+                List<String> tmp = new ArrayList<String>();
+                idPharmInCycle = "kek";
+                String idStr = String.valueOf(idDrug);
+                for(DataSnapshot dsp : snapshot.getChildren()){
+                    Log.d("MYTAG",String.valueOf(dsp.child("id_drug").getValue()));
+                    if(String.valueOf(dsp.child("id_drug").getValue()).equals(idStr)) {
+                        String namePharm = String.valueOf(dsp.child("id_pharma").getValue());
+                        if (namePharm.equals("0")) {
+                            idPharmInCycle = "МАЯК НА ПОЛЕЖАЕВСКОЙ";
+                        } else if (namePharm.equals("1")) {
+                            idPharmInCycle = "ФЛОРИЯ ЭКОНОМ ПОЛЕЖАЕВСКАЯ";
+                        } else if (namePharm.equals("2")) {
+                            idPharmInCycle = "ИРИСТ 2000 НА МАРШАЛА ЖУКОВА";
+                        } else if (namePharm.equals("3")) {
+                            idPharmInCycle = "АПТЕКИ СТОЛИЧКИ ВОРОНЦОВСКАЯ";
+                        } else if (namePharm.equals("4")) {
+                            idPharmInCycle = "АПТЕКА ЛФ";
+                        }
+                        tmp.add(String.valueOf(dsp.child("cost").getValue()));
+                        tmp.add(idPharmInCycle);
+                        tmp.add(String.valueOf(dsp.child("id_pharma").getValue()));
+                        namesAndCosts.add(new String[]{tmp.get(1), tmp.get(0), tmp.get(2)});
+                        tmp.clear();
+                    }
+                }
+                for(final String[] aStr : namesAndCosts) {
+                    DatabaseReference newRef = database.getReference("pharmacy_addr/" + aStr[2]);
+                    newRef.addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            double lat=0;
+                            double lng=0;
 
-                                    if(namePharm.equals("МАЯК НА ПОЛЕЖАЕВСКОЙ")){
-                                        idPharmInCycle = "0";
-                                    } else if(namePharm.equals("ФЛОРИЯ ЭКОНОМ ПОЛЕЖАЕВСКАЯ")){
-                                        idPharmInCycle = "1";
-                                    }else if(namePharm.equals("ИРИСТ 2000 НА МАРШАЛА ЖУКОВА")){
-                                        idPharmInCycle = "2";
-                                    }else if(namePharm.equals("АПТЕКИ СТОЛИЧКИ ВОРОНЦОВСКАЯ")) {
-                                        idPharmInCycle = "3";
-                                    }else if(namePharm.equals("АПТЕКА ЛФ")) {
-                                        idPharmInCycle = "4";
-                                    }
-                                    tmp.add(idPharmInCycle);
-                                }
-                                else if(String.valueOf(dsp2.getKey()).equals("cost")) {
-                                    tmp.add(String.valueOf(dsp2.getValue()));
+                            for(DataSnapshot dsp : dataSnapshot.getChildren() ){
+                                if(String.valueOf(dsp.getKey()).equals("latitude")){
+                                    lat = Double.valueOf(String.valueOf(dsp.getValue()));
+                                } else if(String.valueOf(dsp.getKey()).equals("longtitude")){
+                                    lng = Double.valueOf(String.valueOf(dsp.getValue()));
                                 }
                             }
-                            namesAndCosts.add(new String[]{tmp.get(1),tmp.get(0),tmp.get(2)});
-                            tmp.clear();
+                            addMarker(lat,lng,String.valueOf(namesAndCosts.indexOf(aStr)));
                         }
-                        for(final String[] aStr : namesAndCosts) {
-                            DatabaseReference newRef = database.getReference("pharmacy_addr/" + aStr[2]);
-                            newRef.addValueEventListener(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    double lat=0;
-                                    double lng=0;
 
-                                    for(DataSnapshot dsp : dataSnapshot.getChildren() ){
-                                        if(String.valueOf(dsp.getKey()).equals("latitude")){
-                                            lat = Double.valueOf(String.valueOf(dsp.getValue()));
-                                        } else if(String.valueOf(dsp.getKey()).equals("longtitude")){
-                                            lng = Double.valueOf(String.valueOf(dsp.getValue()));
-                                        }
-                                    }
-                                    addMarker(lat,lng,String.valueOf(namesAndCosts.indexOf(aStr)));
-                                }
-
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-                                    Log.e("The read failed: " ,databaseError.getMessage());
-                                }
-                            });
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            Log.e("The read failed: " ,databaseError.getMessage());
                         }
-                    }
+                    });
+                }
+            }
 
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        Log.e("The read failed: " ,databaseError.getMessage());
-                    }
-                });
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.e("The read failed: " ,databaseError.getMessage());
+            }
+        });
     }
 
     private void addMarker(double lat, double lng,String idPharm) {

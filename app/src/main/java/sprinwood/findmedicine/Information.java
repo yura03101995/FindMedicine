@@ -19,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.google.android.gms.games.internal.api.StatsImpl;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -61,38 +62,35 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
         String vendor = intent.getStringExtra("vendor");
         idDrug = intent.getStringExtra("id");
         Log.d("MYTAG","drugs_pharmacy/" + String.valueOf(idDrug) + "/pharmacies_costs");
-        DatabaseReference myFirebaseRef = database.getReference("drugs_pharmacy/" + String.valueOf(idDrug) + "/pharmacies_costs");
+        DatabaseReference myFirebaseRef = database.getReference("pharma_drug_cost");
         myFirebaseRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 namesAndCosts = new ArrayList<String[]>();
                 List<String> tmp = new ArrayList<String>();
                 idPharmInCycle = "kek";
+                String idStr = String.valueOf(idDrug);
                 for(DataSnapshot dsp : snapshot.getChildren()){
-                    for(DataSnapshot dsp2 : dsp.getChildren()){
-                        if(String.valueOf(dsp2.getKey()).equals("name")){
-                            tmp.add(String.valueOf(dsp2.getValue()));
-                            String namePharm = String.valueOf(dsp2.getValue());
-
-                            if(namePharm.equals("МАЯК НА ПОЛЕЖАЕВСКОЙ")){
-                                idPharmInCycle = "0";
-                            } else if(namePharm.equals("ФЛОРИЯ ЭКОНОМ ПОЛЕЖАЕВСКАЯ")){
-                                idPharmInCycle = "1";
-                            }else if(namePharm.equals("ИРИСТ 2000 НА МАРШАЛА ЖУКОВА")){
-                                idPharmInCycle = "2";
-                            }else if(namePharm.equals("АПТЕКИ СТОЛИЧКИ ВОРОНЦОВСКАЯ")) {
-                                idPharmInCycle = "3";
-                            }else if(namePharm.equals("АПТЕКА ЛФ")) {
-                                idPharmInCycle = "4";
-                            }
-                            tmp.add(idPharmInCycle);
+                    Log.d("MYTAG",String.valueOf(dsp.child("id_drug").getValue()));
+                    if(String.valueOf(dsp.child("id_drug").getValue()).equals(idStr)) {
+                        String namePharm = String.valueOf(dsp.child("id_pharma").getValue());
+                        if (namePharm.equals("0")) {
+                            idPharmInCycle = "МАЯК НА ПОЛЕЖАЕВСКОЙ";
+                        } else if (namePharm.equals("1")) {
+                            idPharmInCycle = "ФЛОРИЯ ЭКОНОМ ПОЛЕЖАЕВСКАЯ";
+                        } else if (namePharm.equals("2")) {
+                            idPharmInCycle = "ИРИСТ 2000 НА МАРШАЛА ЖУКОВА";
+                        } else if (namePharm.equals("3")) {
+                            idPharmInCycle = "АПТЕКИ СТОЛИЧКИ ВОРОНЦОВСКАЯ";
+                        } else if (namePharm.equals("4")) {
+                            idPharmInCycle = "АПТЕКА ЛФ";
                         }
-                        else if(String.valueOf(dsp2.getKey()).equals("cost")) {
-                            tmp.add(String.valueOf(dsp2.getValue()));
-                        }
+                        tmp.add(String.valueOf(dsp.child("cost").getValue()));
+                        tmp.add(idPharmInCycle);
+                        tmp.add(String.valueOf(dsp.child("id_pharma").getValue()));
+                        namesAndCosts.add(new String[]{tmp.get(1), tmp.get(0), tmp.get(2)});
+                        tmp.clear();
                     }
-                    namesAndCosts.add(new String[]{tmp.get(1),tmp.get(0),tmp.get(2)});
-                    tmp.clear();
                 }
 
                 // находим список
