@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ListActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
-
-
     ListView lvMain;
     final String LOG_TAG = "myLogs";
     List<String[]> namesAndVendors;

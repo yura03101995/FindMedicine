@@ -4,12 +4,18 @@ package sprinwood.findmedicine;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.SearchView;
+import android.util.FloatProperty;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListAdapter;
@@ -47,6 +53,8 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
     ScrollView mScrollView;
     String idDrug;
     String idPharmInCycle;
+    String name;
+    String vendor;
     FirebaseDatabase database;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,9 +65,11 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
         tvName = (TextView) findViewById(R.id.tvName);
         tvVendor = (TextView) findViewById(R.id.tvVendor);
         btnBack = (Button) findViewById(R.id.btnBack);
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
 
-        String name = intent.getStringExtra("name");
-        String vendor = intent.getStringExtra("vendor");
+        name = intent.getStringExtra("name");
+        vendor = intent.getStringExtra("vendor");
         idDrug = intent.getStringExtra("id");
         Log.d("MYTAG","drugs_pharmacy/" + String.valueOf(idDrug) + "/pharmacies_costs");
         DatabaseReference myFirebaseRef = database.getReference("pharma_drug_cost");
@@ -113,8 +123,40 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
                 };
                 // присваиваем адаптер списку
                 lvInformation.setAdapter(adapter);
-                setListViewHeightBasedOnChildren(lvInformation);
+                lvInformation.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        String[] entry = namesAndCosts.get(position);
+                        DatabaseReference ref = database.getReference("pharmacy_addr/" + entry[2]);
+                        Log.d("MYTAG", "pharmacy_addr/" + entry[2]);
+                        ref.addValueEventListener(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot snapshot) {
+                                double lat = 0, lng = 0;
+                                for(DataSnapshot dsp : snapshot.getChildren()){
+                                    if( String.valueOf(dsp.getKey()).equals("latitude")){
+                                        lat = Float.valueOf(String.valueOf(dsp.getValue()));
+                                    }
+                                    else{
+                                        if( String.valueOf(dsp.getKey()).equals("longtitude")){
+                                            lng = Float.valueOf(String.valueOf(dsp.getValue()));
+                                        }
+                                    }
+                                }
+                                CameraUpdate center=
+                                        CameraUpdateFactory.newLatLng(new LatLng(lat, lng));
+                                mvOnInformation.moveCamera(center);
+                            }
 
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
+                    }
+                });
+
+                setListViewHeightBasedOnChildren(lvInformation);
                 for(final String[] aStr : namesAndCosts) {
                     DatabaseReference newRef = database.getReference("pharmacy_addr/" + aStr[2]);
                     newRef.addValueEventListener(new ValueEventListener() {
@@ -233,6 +275,8 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
                 public void onMapClick(LatLng latLng) {
                     Intent intent = new Intent(getBaseContext(),MapActivity.class);
                     intent.putExtra("idDrug",idDrug);
+                    intent.putExtra("name", name);
+                    intent.putExtra("vendor", vendor);
                     startActivity(intent);
                 }
             });
@@ -240,6 +284,13 @@ public class Information extends AppCompatActivity implements OnMapReadyCallback
         catch (NullPointerException exception){
             Log.e("mapApp", exception.toString());
         }
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item){
+        Intent myIntent = new Intent(getApplicationContext(), ListActivity.class);
+        startActivityForResult(myIntent, 0);
+        return true;
+
     }
 
     public static void setListViewHeightBasedOnChildren(ListView listView) {

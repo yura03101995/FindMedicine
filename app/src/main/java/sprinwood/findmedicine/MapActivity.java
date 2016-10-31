@@ -3,9 +3,11 @@ package sprinwood.findmedicine;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,13 +36,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     String idPharmInCycle = "kek";
     FirebaseDatabase database;
     String idDrug;
+    String name;
+    String vendor;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         Intent intent = getIntent();
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
         database = FirebaseDatabase.getInstance();
         idDrug = intent.getStringExtra("idDrug");
+        vendor = intent.getStringExtra("vendor");
+        name = intent.getStringExtra("name");
         createMapView();
         DatabaseReference myFirebaseRef = database.getReference("pharma_drug_cost");
         myFirebaseRef.addValueEventListener(new ValueEventListener() {
@@ -133,6 +141,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             Log.e("mapApp", exception.toString());
         }
     }
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         try {
@@ -186,5 +195,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         catch (NullPointerException exception){
             Log.e("mapApp", exception.toString());
         }
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item){
+        Intent intent = new Intent(getApplicationContext(), Information.class);
+        intent.putExtra("name", name);
+        intent.putExtra("vendor", vendor);
+        intent.putExtra("id", idDrug);
+        startActivity(intent);
+        return true;
+
     }
 }
